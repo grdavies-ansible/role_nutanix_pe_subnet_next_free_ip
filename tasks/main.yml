@@ -1,6 +1,7 @@
 ---
 # tasks file for nutanix_role_prism_subnet_next_free_ip
-- import_tasks: setup_api.yml
+- name: Setup connection to Nutanix API
+  ansible.builtin.include_tasks: setup_api.yml
 
 - name: "Task can only be run against Prism Element"
   ansible.builtin.fail:
@@ -19,8 +20,8 @@
         validate_certs: "{{ validate_certs }}"
       register: nutanix_current_subnets
 
-    - name: search subnets list for subnet name and return its uuid
-      set_fact:
+    - name: Search subnets list for subnet name and return its uuid
+      ansible.builtin.set_fact:
         nutanix_next_ip_network_uuid: "{{ item.metadata.uuid }}"
         nutanix_next_ip_subnet: "{{ item.spec.resources.ip_config.subnet_ip }}"
         nutanix_next_ip_prefix: "{{ item.spec.resources.ip_config.prefix_length }}"
@@ -28,8 +29,11 @@
       when: item.status.name == nutanix_next_ip_subnet_name
       with_items: "{{ nutanix_current_subnets.response.entities }}"
 
-- ansible.builtin.fail:
-    msg: "the subnet '{{ nutanix_next_ip_subnet_name }}' was not found. Please check the input variable nutanix_next_ip_subnet_name or that the subnet is present on this Nutanix cluster"
+- name: Subnet not found
+  ansible.builtin.fail:
+    msg:
+      "the subnet '{{ nutanix_next_ip_subnet_name }}' was not found. Please check the input variable nutanix_next_ip_subnet_name or \
+      that the subnet is present on this Nutanix cluster"
   when:
     - nutanix_next_ip_network_uuid is not defined
 
@@ -50,9 +54,9 @@
     headers:
       Authorization: "{{ nutanix_api_auth }}"
     status_code: 200
-    return_content: yes
+    return_content: true
   register: nutanix_next_ip_assigned_addresses
-  ignore_errors: False
+  ignore_errors: false
 
 - name: Set list of assigned IP addresses
   ansible.builtin.set_fact:
@@ -67,6 +71,8 @@
     nutanix_subnet_ipam_next_available_ip: "{{ nutanix_next_ip_available_address_list | first }}"
 
 - name: Debug
+  when:
+    - nutanix_debug
   block:
     - name: Debug nutanix_current_subnets.response
       ansible.builtin.debug:
@@ -107,13 +113,11 @@
     - name: Debug nutanix_next_ip_available_ip
       ansible.builtin.debug:
         var: nutanix_next_ip_available_ip
-  when:
-    - nutanix_debug
 
 - name: Perform basic ping test on IP address "{{ nutanix_next_ip_subnet_name }}"
-  shell: "ping -c 2 {{ nutanix_subnet_ipam_next_available_ip }}"
+  ansible.builtin.command: "ping -c 2 {{ nutanix_subnet_ipam_next_available_ip }}"
   register: nutanix_subnet_ipam_next_available_ip_ping
-  ignore_errors: yes
+  ignore_errors: true
   changed_when: false
   check_mode: false
   failed_when: nutanix_subnet_ipam_next_available_ip_ping.rc == 1 or nutanix_subnet_ipam_next_available_ip_ping.rc > 2
