@@ -1,0 +1,12 @@
+---
+ansible:
+  custom_modules:
+    - nutanix.ncp
+
+rules:
+  exclude_filter:
+    - LINT0009
+    - ANSIBLE0012
+    # - ANSIBLE0009
+    # - ANSIBLE0007
+    # - ANSIBLE0020

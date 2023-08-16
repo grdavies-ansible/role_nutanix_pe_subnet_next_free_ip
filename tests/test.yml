@@ -1,0 +1,12 @@
+---
+- hosts: localhost
+  gather_facts: false
+  roles:
+    - role: ../..
+  vars:
+    nutanix_host: "10.42.70.37"
+    nutanix_username: admin
+    nutanix_password: nx2Tech075!
+    nutanix_debug: False
+    nutanix_next_ip_subnet_name: Primary
+    nutanix_next_ip_ping_test: yes
