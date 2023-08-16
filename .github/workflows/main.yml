@@ -10,13 +10,10 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
-      - name: run ansible-later action
-        uses: patrickjahns/ansible-later-action@master
+      - name: run ansible-lint
+        uses: ansible/ansible-lint@main
         with:
-          # config: .later.yml
-          path: tasks
+          path: "."
 
   release:
     needs:
@@ -25,6 +22,7 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
+
       - name: galaxy
         uses: buluma/galaxy-action@v1.0.3
         with:

@@ -1,3 +1,3 @@
 ---
 collections:
-  - nutanix.ncp
+  - name: nutanix.ncp
