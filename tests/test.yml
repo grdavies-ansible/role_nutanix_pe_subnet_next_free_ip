@@ -9,4 +9,4 @@
     role_nutanix_pe_subnet_next_free_ip_password: nx2Tech454!
     role_nutanix_pe_subnet_next_free_ip_debug: false
     role_nutanix_pe_subnet_next_free_ip_subnet_name: Primary
-    role_nutanix_pe_subnet_next_free_ip_ping_test: yes
+    role_nutanix_pe_subnet_next_free_ip_ping_test: true
