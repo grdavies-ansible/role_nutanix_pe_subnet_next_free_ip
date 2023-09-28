@@ -1,23 +1,31 @@
 ---
 # tasks file for nutanix_role_prism_subnet_next_free_ip
 - name: Setup connection to Nutanix API
-  ansible.builtin.include_tasks: setup_api.yml
+  ansible.builtin.include_role:
+    name: grdavies.role_nutanix_prism_api
+  vars:
+    role_nutanix_prism_api_host: "{{ role_nutanix_pe_subnet_next_free_ip_host }}"
+    role_nutanix_prism_api_username: "{{ role_nutanix_pe_subnet_next_free_ip_username }}"
+    role_nutanix_prism_api_password: "{{ role_nutanix_pe_subnet_next_free_ip_password }}"
+    role_nutanix_prism_api_port: "{{ role_nutanix_pe_subnet_next_free_ip_port | default(omit) }}"
+    role_nutanix_prism_api_validate_certs: "{{ role_nutanix_pe_subnet_next_free_ip_validate_certs | default(omit) }}"
+    role_nutanix_prism_api_debug: "{{ role_nutanix_pe_subnet_next_free_ip_debug | default(omit) }}"
 
 - name: "Task can only be run against Prism Element"
   ansible.builtin.fail:
-    msg: "'nutanix_host' needs to be set to the VIP of a Nutanix cluster. Please check the variable and try again."
+    msg: "'role_nutanix_pe_subnet_next_free_ip_host' needs to be set to the VIP of a Nutanix cluster. Please check the variable and try again."
   when:
-    - nutanix_endpoint_prism_type != 'pe'
+    - role_nutanix_prism_api_endpoint_type != 'pe'
 
 # Get network UUID
-- name: Find uuid for network "{{ nutanix_next_ip_subnet_name }}"
+- name: Find uuid for network "{{ role_nutanix_pe_subnet_next_free_ip_subnet_name }}"
   block:
     - name: Get subnets from nutanix.ncp collection
       nutanix.ncp.ntnx_subnets_info:
-        nutanix_host: "{{ nutanix_host }}"
-        nutanix_username: "{{ nutanix_username }}"
-        nutanix_password: "{{ nutanix_password }}"
-        validate_certs: "{{ validate_certs }}"
+        nutanix_host: "{{ role_nutanix_pe_subnet_next_free_ip_host }}"
+        nutanix_username: "{{ role_nutanix_pe_subnet_next_free_ip_username }}"
+        nutanix_password: "{{ role_nutanix_pe_subnet_next_free_ip_password }}"
+        validate_certs: "{{ role_nutanix_pe_subnet_next_free_ip_validate_certs }}"
       register: nutanix_current_subnets
 
     - name: Search subnets list for subnet name and return its uuid
@@ -26,14 +34,14 @@
         nutanix_next_ip_subnet: "{{ item.spec.resources.ip_config.subnet_ip }}"
         nutanix_next_ip_prefix: "{{ item.spec.resources.ip_config.prefix_length }}"
         nutanix_next_ip_pools: "{{ item.spec.resources.ip_config.pool_list }}"
-      when: item.status.name == nutanix_next_ip_subnet_name
+      when: item.status.name == role_nutanix_pe_subnet_next_free_ip_subnet_name
       with_items: "{{ nutanix_current_subnets.response.entities }}"
 
 - name: Subnet not found
   ansible.builtin.fail:
     msg:
-      "the subnet '{{ nutanix_next_ip_subnet_name }}' was not found. Please check the input variable nutanix_next_ip_subnet_name or \
-      that the subnet is present on this Nutanix cluster"
+      "the subnet '{{ role_nutanix_pe_subnet_next_free_ip_subnet_name }}' was not found. Please check the input \
+      variable role_nutanix_pe_subnet_next_free_ip_subnet_name or that the subnet is present on this Nutanix cluster"
   when:
     - nutanix_next_ip_network_uuid is not defined
 
@@ -43,16 +51,18 @@
 
 - name: Append IP addresses in each pool to nutanix_next_ip_pool_address_list
   ansible.builtin.set_fact:
-    nutanix_next_ip_pool_address_list: "{{ nutanix_next_ip_pool_address_list + ( item.range.split(' ')[0] | netaddr_iter_iprange(item.range.split(' ')[1]) ) }}"
+    nutanix_next_ip_pool_address_list: >-
+      "{{ nutanix_next_ip_pool_address_list
+      + ( item.range.split(' ')[0] | netaddr_iter_iprange(item.range.split(' ')[1]) ) }}"
   loop: "{{ nutanix_next_ip_pools }}"
 
-- name: Get assigned IP addresses within subnet "{{ nutanix_next_ip_subnet_name }}"
+- name: Get assigned IP addresses within subnet "{{ role_nutanix_pe_subnet_next_free_ip_subnet_name }}"
   ansible.builtin.uri:
-    url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v2.0/networks/{{ nutanix_next_ip_network_uuid }}/addresses/"
+    url: "https://{{ role_nutanix_prism_api_url_base }}/PrismGateway/services/rest/v2.0/networks/{{ nutanix_next_ip_network_uuid }}/addresses/"
     method: GET
-    validate_certs: "{{ validate_certs }}"
+    validate_certs: "{{ role_nutanix_pe_subnet_next_free_ip_validate_certs }}"
     headers:
-      Authorization: "{{ nutanix_api_auth }}"
+      Authorization: "{{ role_nutanix_prism_api_auth_string_b64 }}"
     status_code: 200
     return_content: true
   register: nutanix_next_ip_assigned_addresses
@@ -60,11 +70,15 @@
 
 - name: Set list of assigned IP addresses
   ansible.builtin.set_fact:
-    nutanix_next_ip_assigned_address_list: "{{ nutanix_next_ip_assigned_addresses.json.entities | map(attribute='ip_address') | list | default([]) }}"
+    nutanix_next_ip_assigned_address_list: >-
+      "{{ nutanix_next_ip_assigned_addresses.json.entities
+      | map(attribute='ip_address') | list | default([]) }}"
 
 - name: Get list of available IP addresses
   ansible.builtin.set_fact:
-    nutanix_next_ip_available_address_list: "{{ nutanix_next_ip_pool_address_list | difference(nutanix_next_ip_assigned_address_list) }}"
+    nutanix_next_ip_available_address_list: >-
+      "{{ nutanix_next_ip_pool_address_list
+      | difference(nutanix_next_ip_assigned_address_list) }}"
 
 - name: Get first available IP address
   ansible.builtin.set_fact:
@@ -72,7 +86,7 @@
 
 - name: Debug
   when:
-    - nutanix_debug
+    - role_nutanix_pe_subnet_next_free_ip_debug
   block:
     - name: Debug nutanix_current_subnets.response
       ansible.builtin.debug:
@@ -114,7 +128,7 @@
       ansible.builtin.debug:
         var: nutanix_next_ip_available_ip
 
-- name: Perform basic ping test on IP address "{{ nutanix_next_ip_subnet_name }}"
+- name: Perform basic ping test on IP address "{{ role_nutanix_pe_subnet_next_free_ip_subnet_name }}"
   ansible.builtin.command: "ping -c 2 {{ nutanix_subnet_ipam_next_available_ip }}"
   register: nutanix_subnet_ipam_next_available_ip_ping
   ignore_errors: true
@@ -122,20 +136,20 @@
   check_mode: false
   failed_when: nutanix_subnet_ipam_next_available_ip_ping.rc == 1 or nutanix_subnet_ipam_next_available_ip_ping.rc > 2
   when:
-    - nutanix_next_ip_ping_test
+    - role_nutanix_pe_subnet_next_free_ip_ping_test
 
 - name: ICMP test failure
   ansible.builtin.fail:
     msg: "ICMP test indicates that {{ nutanix_subnet_ipam_next_available_ip }} is in use. Please investigate and try again."
   when:
-    - nutanix_next_ip_ping_test
+    - role_nutanix_pe_subnet_next_free_ip_ping_test
     - nutanix_subnet_ipam_next_available_ip_ping.rc == 1 or nutanix_subnet_ipam_next_available_ip_ping.rc > 2
 
 - name: ICMP test warning
   ansible.builtin.debug:
     msg: "WARNING: No ping test performed to attempt to verify whether IP address '{{ nutanix_subnet_ipam_next_available_ip }}' is in use."
-  when: not nutanix_next_ip_ping_test
+  when: not role_nutanix_pe_subnet_next_free_ip_ping_test
 
-- name: Next available IP address within subnet "{{ nutanix_next_ip_subnet_name }}"
+- name: Next available IP address within subnet "{{ role_nutanix_pe_subnet_next_free_ip_subnet_name }}"
   ansible.builtin.debug:
     var: nutanix_subnet_ipam_next_available_ip

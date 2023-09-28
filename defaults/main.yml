@@ -1,9 +1,9 @@
 ---
 # defaults file for nutanix_role_prism_subnet_next_free_ip
-nutanix_host: ""
-nutanix_username: ""
-nutanix_password: ""
-nutanix_port: 9440
-validate_certs: false
-nutanix_debug: false
-nutanix_next_ip_ping_test: false
+role_nutanix_pe_subnet_next_free_ip_host: ""
+role_nutanix_pe_subnet_next_free_ip_username: ""
+role_nutanix_pe_subnet_next_free_ip_password: ""
+role_nutanix_pe_subnet_next_free_ip_port: 9440
+role_nutanix_pe_subnet_next_free_ip_validate_certs: false
+role_nutanix_pe_subnet_next_free_ip_debug: false
+role_nutanix_pe_subnet_next_free_ip_ping_test: false

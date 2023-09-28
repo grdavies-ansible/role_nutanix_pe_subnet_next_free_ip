@@ -4,9 +4,9 @@
   roles:
     - role: ../..
   vars:
-    nutanix_host: "10.42.70.37"
-    nutanix_username: admin
-    nutanix_password: nx2Tech075!
-    nutanix_debug: False
-    nutanix_next_ip_subnet_name: Primary
-    nutanix_next_ip_ping_test: yes
+    role_nutanix_pe_subnet_next_free_ip_host: 10.38.67.37
+    role_nutanix_pe_subnet_next_free_ip_username: admin
+    role_nutanix_pe_subnet_next_free_ip_password: nx2Tech454!
+    role_nutanix_pe_subnet_next_free_ip_debug: false
+    role_nutanix_pe_subnet_next_free_ip_subnet_name: Primary
+    role_nutanix_pe_subnet_next_free_ip_ping_test: yes
