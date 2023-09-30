@@ -5,10 +5,10 @@
     name: grdavies.role_nutanix_prism_api
   vars:
     role_nutanix_prism_api_host: "{{ role_nutanix_pe_subnet_next_free_ip_host }}"
-    role_nutanix_prism_api_username: "{{ role_nutanix_pe_subnet_next_free_ip_username }}"
-    role_nutanix_prism_api_password: "{{ role_nutanix_pe_subnet_next_free_ip_password }}"
-    role_nutanix_prism_api_port: "{{ role_nutanix_pe_subnet_next_free_ip_port | default(omit) }}"
-    role_nutanix_prism_api_validate_certs: "{{ role_nutanix_pe_subnet_next_free_ip_validate_certs | default(omit) }}"
+    role_nutanix_prism_api_host_usernamername: "{{ role_nutanix_pe_subnet_next_free_ip_host_username }}"
+    role_nutanix_prism_api_host_password: "{{ role_nutanix_pe_subnet_next_free_ip_host_password }}"
+    role_nutanix_prism_api_host_port: "{{ role_nutanix_pe_subnet_next_free_ip_host_port | default(omit) }}"
+    role_nutanix_prism_api_host_validate_certs: "{{ role_nutanix_pe_subnet_next_free_ip_host_validate_certs | default(omit) }}"
     role_nutanix_prism_api_debug: "{{ role_nutanix_pe_subnet_next_free_ip_debug | default(omit) }}"
 
 - name: "Task can only be run against Prism Element"
@@ -23,9 +23,9 @@
     - name: Get subnets from nutanix.ncp collection
       nutanix.ncp.ntnx_subnets_info:
         nutanix_host: "{{ role_nutanix_pe_subnet_next_free_ip_host }}"
-        nutanix_username: "{{ role_nutanix_pe_subnet_next_free_ip_username }}"
-        nutanix_password: "{{ role_nutanix_pe_subnet_next_free_ip_password }}"
-        validate_certs: "{{ role_nutanix_pe_subnet_next_free_ip_validate_certs }}"
+        nutanix_username: "{{ role_nutanix_pe_subnet_next_free_ip_host_username }}"
+        nutanix_password: "{{ role_nutanix_pe_subnet_next_free_ip_host_password }}"
+        validate_certs: "{{ role_nutanix_pe_subnet_next_free_ip_host_validate_certs }}"
       register: nutanix_current_subnets
 
     - name: Search subnets list for subnet name and return its uuid
@@ -60,7 +60,7 @@
   ansible.builtin.uri:
     url: "https://{{ role_nutanix_prism_api_url_base }}/PrismGateway/services/rest/v2.0/networks/{{ nutanix_next_ip_network_uuid }}/addresses/"
     method: GET
-    validate_certs: "{{ role_nutanix_pe_subnet_next_free_ip_validate_certs }}"
+    validate_certs: "{{ role_nutanix_pe_subnet_next_free_ip_host_validate_certs }}"
     headers:
       Authorization: "{{ role_nutanix_prism_api_auth_string_b64 }}"
     status_code: 200
